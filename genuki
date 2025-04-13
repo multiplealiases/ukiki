@@ -1,0 +1,102 @@
+#!/usr/bin/env sh
+
+set -o nounset
+set -o errexit
+
+# genuki: generate UKI images using objcopy
+
+die() {
+	# shellcheck disable=SC2059
+	printf "$@"
+	exit 1
+}
+
+info() {
+    1>&2 printf '>>> %s\n' "$1"
+}
+
+guess_efistub() {
+    if [ -f /usr/lib/systemd/boot/efi/linuxx64.efi.stub ]
+    then
+        echo /usr/lib/systemd/boot/efi/linuxx64.efi.stub
+    elif [ -f /usr/lib/gummiboot/linuxx64.efi.stub ]
+    then
+        echo /usr/lib/gummiboot/linuxx64.efi.stub
+    else
+        echo
+    fi
+}
+
+if [ "$efistub" = "" ]
+then
+    1>&2 cat << MSG
+The EFI stub linuxx64.efi.stub (required to produce a UKI)
+is absent, and no candidate exists in the filesystem.
+
+The following distributions are known to package
+a suitable stub under the following package names.
+
+Alpine: gummiboot-efistub
+Arch: systemd
+Chimera: systemd-boot-efi
+Debian Bookworm, Ubuntu 24.04+: systemd-boot-efi
+Fedora: systemd-boot-unsigned
+Gentoo: sys-apps/systemd[boot] or sys-apps/systemd-utils[boot]
+Void: systemd-boot-efistub
+
+MSG
+    missing_efistub="yes"
+fi
+
+
+if [ "$missing_efistub" = yes ]
+then
+    exit 1
+fi
+
+help(){
+    cat << EOF
+genuki: generate UKI images using objcopy
+Usage: make-recovery-uki --output [name]
+Options
+-l, --linux     path to Linux kernel (required)
+-i, --initrd    path to initrd (required)
+-o, --output    output file prefix (required)
+-c, --cmdline   cmdline string
+-s, --splash    path to splash .bmp
+-h, --help      this help
+EOF
+}
+
+while [ "$#" -gt 0 ]
+do
+    case "$1" in
+    --help)
+        help
+        exit 1
+        ;;
+    -o | --output)
+        output="$2"
+        shift 2
+        ;;
+    -l | --linux)
+        linux="$2"
+        shift 2
+        ;;
+    -i | --initrd)
+        initrd="$2"
+        shift 2
+        ;;
+    -s | --splash)
+        splash="$2"
+        shift 2
+        ;;
+    -c | --cmdline)
+        cmdline="$2"
+        shift 2
+        ;;
+    *)
+        die "argument(s) not recognized: %s\nUse --help for help\n" "$*"
+        ;;
+    esac
+done

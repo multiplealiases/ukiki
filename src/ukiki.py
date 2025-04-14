@@ -5,6 +5,8 @@ import sys
 import argparse
 import platform
 import re
+import tempfile
+import subprocess
 
 # This script requires Python 3.9.
 
@@ -79,6 +81,28 @@ def translate_machine(arch):
     sys.exit(f"Unknown architecture {arch}. Specify -e/--efistub.")
 
 
+def parse_last_section(efistub) -> int:
+    output = subprocess.check_output(["objdump", "--section-headers", efistub])
+    line = re.search(
+        r".reloc\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)", output.decode("UTF-8")
+    ).group(2)
+
+    out = int(line, 16)
+    return out
+
+
+def round_up(value, roundby):
+    return -(-value // roundby) * roundby + roundby
+
+
+def build_section_command(file):
+    pass
+
+
+def calculate_size(file, alignment) -> int:
+    return round_up(file.stat().st_size, alignment)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("output", help="output filename", type=Path)
@@ -94,7 +118,7 @@ def main():
     parser.add_argument(
         "-s", "--splash", help="path to splash image (.bmp format)", type=Path
     )
-    parser.add_argument("-c", "--cmdline", help="cmdline string", type=str)
+    parser.add_argument("-c", "--cmdline", help="cmdline string", type=str, default="")
     parser.add_argument("-e", "--efistub", help="path to EFI boot stub")
     parser.add_argument(
         "-A",
@@ -111,6 +135,39 @@ def main():
     efistub = args.efistub if args.efistub is not None else guess_efistub(args.arch)
 
     print(f"guessed efistub {efistub}")
+
+    # didn't feel like indenting every line afterwards
+    cmdline = tempfile.TemporaryFile()
+    cmdline.write(f"{cmdline}".encode("UTF-8"))
+
+    last_stub_section = parse_last_section(efistub)
+    # close enough.
+    alignment = 0x1000
+
+    aligned_stub_section = round_up(last_stub_section, alignment)
+
+    print(f"final stub section is at 0x{last_stub_section:x}")
+    print(f"next section will be at 0x{aligned_stub_section:x}")
+
+    # dicts are ordered in Python 3.7+.
+    sizes = {}
+    sizes[".initrd"] = calculate_size(args.initrd, alignment) + aligned_stub_section
+    sizes[".osrel"] = calculate_size(args.osrel, alignment) + list(sizes.values())[-1]
+
+    if args.splash is not None:
+        sizes[".splash"] = (
+            calculate_size(args.splash, alignment) + list(sizes.values())[-1]
+        )
+    if args.cmdline != "":
+        sizes[".cmdline"] = (
+            calculate_size(cmdline, alignment) + list(sizes.values())[-1]
+        )
+
+    sizes[".linux"] = calculate_size(args.linux, alignment) + list(sizes.values())[-1]
+
+    print(sizes)
+
+    command_line = ["objcopy", args.efistub, args.output]
 
 
 if __name__ == "__main__":

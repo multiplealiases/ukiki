@@ -95,10 +95,6 @@ def round_up(value, roundby):
     return -(-value // roundby) * roundby + roundby
 
 
-def build_section_command(file):
-    pass
-
-
 def calculate_size(file, alignment) -> int:
     return round_up(file.stat().st_size, alignment), file
 

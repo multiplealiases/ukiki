@@ -3,7 +3,30 @@
 set -o nounset
 set -o errexit
 
-# genuki: generate UKI images using objcopy
+# ukiki: generate UKI images using objcopy
+
+# SPDX-License-Identifier: MIT
+
+# Copyright (c) 2025 multiplealiases
+#
+# Permission is hereby granted, free of charge, to any person obtaining
+# a copy of this software and associated documentation files (the
+# “Software”), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
+# the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+# NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+# DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+# OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+# THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 die() {
 	# shellcheck disable=SC2059
@@ -13,6 +36,22 @@ die() {
 
 info() {
     1>&2 printf '>>> %s\n' "$1"
+}
+
+help(){
+    cat << EOF
+ukiki: generate UKI images using objcopy
+Usage: ukiki --linux [linux] --initrd [initrd] --osrel [osrel] --output [name]
+Options
+-l, --linux     path to Linux kernel (required)
+-i, --initrd    path to initrd (required)
+-r, --osrel     path to os-release (required)
+-c, --cmdline   cmdline string
+-s, --splash    path to splash .bmp
+-e, --efistub   path to EFI stub
+-o, --output    output file prefix (required)
+-h, --help      this help
+EOF
 }
 
 cleanup_array="$(mktemp)"
@@ -71,21 +110,7 @@ then
     exit 1
 fi
 
-help(){
-    cat << EOF
-genuki: generate UKI images using objcopy
-Usage: make-recovery-uki --output [name]
-Options
--l, --linux     path to Linux kernel (required)
--i, --initrd    path to initrd (required)
--r, --osrel     path to os-release (required)
--c, --cmdline   cmdline string
--s, --splash    path to splash .bmp
--e, --efistub   path to EFI stub
--o, --output    output file prefix (required)
--h, --help      this help
-EOF
-}
+
 
 while [ "$#" -gt 0 ]
 do

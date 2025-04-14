@@ -100,7 +100,16 @@ def build_section_command(file):
 
 
 def calculate_size(file, alignment) -> int:
-    return round_up(file.stat().st_size, alignment)
+    return round_up(file.stat().st_size, alignment), file
+
+
+def running_total(sizes, start):
+    last = start
+    ret = {}
+    for k, (v, p) in sizes.items():
+        ret[k] = last, p
+        last = v + last
+    return ret
 
 
 def main():
@@ -136,38 +145,55 @@ def main():
 
     print(f"guessed efistub {efistub}")
 
-    # didn't feel like indenting every line afterwards
-    cmdline = tempfile.TemporaryFile()
-    cmdline.write(f"{cmdline}".encode("UTF-8"))
+    with tempfile.NamedTemporaryFile() as cmdline:
+        cmdline.write(f"{args.cmdline}".encode("UTF-8"))
+        cmdline.seek(0)
 
-    last_stub_section = parse_last_section(efistub)
-    # close enough.
-    alignment = 0x1000
+        last_stub_section = parse_last_section(efistub)
+        # close enough.
+        alignment = 0x1000
 
-    aligned_stub_section = round_up(last_stub_section, alignment)
+        aligned_stub_section = round_up(last_stub_section, alignment)
 
-    print(f"final stub section is at 0x{last_stub_section:x}")
-    print(f"next section will be at 0x{aligned_stub_section:x}")
+        print(f"final stub section is at 0x{last_stub_section:x}")
+        print(f"next section will be at 0x{aligned_stub_section:x}")
 
-    # dicts are ordered in Python 3.7+.
-    sizes = {}
-    sizes[".initrd"] = calculate_size(args.initrd, alignment) + aligned_stub_section
-    sizes[".osrel"] = calculate_size(args.osrel, alignment) + list(sizes.values())[-1]
+        # dicts are ordered in Python 3.7+.
+        sizes = {}
+        sizes[".osrel"] = calculate_size(args.osrel, alignment)
+        sizes[".initrd"] = calculate_size(args.initrd, alignment)
 
-    if args.splash is not None:
-        sizes[".splash"] = (
-            calculate_size(args.splash, alignment) + list(sizes.values())[-1]
-        )
-    if args.cmdline != "":
-        sizes[".cmdline"] = (
-            calculate_size(cmdline, alignment) + list(sizes.values())[-1]
-        )
+        if args.splash is not None:
+            sizes[".splash"] = calculate_size(args.splash, alignment)
+        if args.cmdline != "":
+            sizes[".cmdline"] = calculate_size(Path(cmdline.name), alignment)
 
-    sizes[".linux"] = calculate_size(args.linux, alignment) + list(sizes.values())[-1]
+        sizes[".linux"] = calculate_size(args.linux, alignment)
 
-    print(sizes)
+        print("sizes:")
+        for k, (v, p) in sizes.items():
+            print(f"{k}: 0x{v:x} at {p}")
 
-    command_line = ["objcopy", args.efistub, args.output]
+        offsets = running_total(sizes, aligned_stub_section)
+
+        print("offsets:")
+        for k, (v, p) in offsets.items():
+            print(f"{k}: 0x{v:x} at {p}")
+
+        command_line = ["objcopy", str(efistub), str(args.output)]
+
+        append = []
+        for k, (v, p) in offsets.items():
+            append += [
+                "--add-section",
+                f"{k}={p}",
+                "--change-section-vma",
+                f"{k}=0x{v:x}",
+            ]
+
+        command_line += append
+
+        subprocess.run(command_line, check=False)
 
 
 if __name__ == "__main__":

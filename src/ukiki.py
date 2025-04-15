@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+"""
+Make UKIs using objcopy.
+"""
 
 from pathlib import Path
 import sys
@@ -10,7 +13,7 @@ import subprocess
 
 # This script requires Python 3.9.
 
-# ukiki: make UKI using objcopy
+# ukiki: make UKIs using objcopy
 
 # SPDX-License-Identifier: MIT
 

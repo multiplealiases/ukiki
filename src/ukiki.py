@@ -136,12 +136,8 @@ def main():
 
     args = parser.parse_args()
 
-    print(args)
-
     # use args.efistub as first priority, else guess the efistub.
     efistub = args.efistub if args.efistub is not None else guess_efistub(args.arch)
-
-    print(f"guessed efistub {efistub}")
 
     with tempfile.NamedTemporaryFile() as cmdline:
         cmdline.write(f"{args.cmdline}".encode("UTF-8"))

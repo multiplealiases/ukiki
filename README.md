@@ -37,6 +37,13 @@ Refer to
 [os-release(5)](https://www.man7.org/linux/man-pages/man5/os-release.5.html)
 for more information.
 
+## Installation
+
+`./src/ukiki.py` is a self-contained Python script
+that only depends on the stdlib, so you can copy it to anywhere in PATH.
+
+You can also use `pipx` to install.
+
 ## Secure Boot
 
 Out of scope because external tools do this better.
@@ -52,4 +59,3 @@ $ sbsign --key /etc/mok.key --cert /etc/mok.crt uki.efi --output uki.signed.efi
 As far as I've been told
 [bootsplash is a to-do feature](https://github.com/torvalds/linux/blob/8ffd015db85fea3e15a77027fda6c02ced4d2444/Documentation/gpu/todo.rst#bootsplash)
 and will have no effect right now (as of kernel 6.14).
-

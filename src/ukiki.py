@@ -44,6 +44,9 @@ __version__ = "0"
 
 
 def guess_efistub(arch):
+    """
+    Guess the path of a suitable EFI stub.
+    """
     arch = translate_machine(arch)
 
     guesslist = [
@@ -74,6 +77,10 @@ You may also specify -e/--efistub to skip autodetection.""")
 
 
 def translate_machine(arch):
+    """
+    Maps an architecture description into the names used by
+    systemd-boot's/gummiboot's EFI stubs.
+    """
     # architecture mapping taken from efi-mkuki.
     if arch in ("x86_64", "x64", "amd64"):
         return "x64"
@@ -87,6 +94,10 @@ def translate_machine(arch):
 
 
 def parse_last_section(efistub) -> int:
+    """
+    Runs objdump on an EFI stub to find the
+    virtual load address of its final section.
+    """
     output = subprocess.check_output(["objdump", "--section-headers", efistub])
     line = re.search(
         r".reloc\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)", output.decode("UTF-8")
@@ -97,14 +108,25 @@ def parse_last_section(efistub) -> int:
 
 
 def round_up(value, roundby):
+    """
+    Rounds up a value by roundby, then adds another roundby.
+    """
     return -(-value // roundby) * roundby + roundby
 
 
 def calculate_size(file, alignment) -> int:
+    """
+    Calculates the size of a file,
+    rounded upwards to alignment.
+    """
     return round_up(file.stat().st_size, alignment), file
 
 
 def running_total(sizes, start):
+    """
+    Converts a dict of section sizes
+    to offsets given a starting offset.
+    """
     last = start
     ret = {}
     for k, (v, p) in sizes.items():
@@ -148,6 +170,8 @@ def main():
 
         last_stub_section = parse_last_section(efistub)
         # close enough.
+        # it's safer to use an overly wide alignment
+        # than to have used an overly narrow alignment
         alignment = 0x1000
 
         aligned_stub_section = round_up(last_stub_section, alignment)

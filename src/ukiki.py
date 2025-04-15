@@ -65,7 +65,9 @@ Chimera: systemd-boot-efi
 Debian Bookworm, Ubuntu 24.04+: systemd-boot-efi
 Fedora: systemd-boot-unsigned
 Gentoo: sys-apps/systemd[boot] or sys-apps/systemd-utils[boot]
-Void: systemd-boot-efistub""")
+Void: systemd-boot-efistub
+
+You may also specify -e/--efistub to skip autodetection.""")
 
 
 def translate_machine(arch):

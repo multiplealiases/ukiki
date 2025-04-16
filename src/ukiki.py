@@ -40,7 +40,7 @@ import subprocess
 
 # one-number pride versioning:
 # increment every time the author is proud of the release
-__version__ = "1"
+__version__ = "2"
 
 
 def guess_efistub(arch):

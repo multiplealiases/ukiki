@@ -99,9 +99,10 @@ def parse_last_section(efistub) -> int:
     virtual load address of its final section.
     """
     output = subprocess.check_output(["objdump", "--section-headers", efistub])
+    lastsection = "\n".join(output.decode("UTF-8").split("\n")[-3:])
     line = re.search(
-        r".reloc\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)\s*([0-f]+)", output.decode("UTF-8")
-    ).group(2)
+        r"(?P<index>\d+)\s+(?P<name>\.\w+)\s+(?P<size>[0-f]+)\s+(?P<vma>[0-f]+)\s+(?P<lma>[0-f]+)\s+(?P<foffset>[0-f]+)\s+(?P<align>2\*\*\d)\n\s+(?P<attributes>[\w, ]+)", lastsection
+    ).group("lma")
 
     out = int(line, 16)
     return out

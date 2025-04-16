@@ -2,6 +2,11 @@
 
 Make UKIs using `objcopy`; a minimal subset of `ukify`.
 
+Mildly a ripoff of [efi-mkuki](https://github.com/jirutka/efi-mkuki),
+and uses the
+[Arch Linux wiki's](https://wiki.archlinux.org/title/Unified_kernel_image#Manually),
+method of calculating offsets for every section.
+
 ## Dependencies
 
 * An EFI stub from either systemd-boot or gummiboot

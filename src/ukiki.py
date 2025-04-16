@@ -159,6 +159,9 @@ def main():
         help="architecture to guess EFI stub with (x64, ia32, aa64...)",
         default=platform.machine(),
     )
+    parser.add_argument(
+        "-u", "--ucode", help="path to microcode initramfs"
+    )
 
     args = parser.parse_args()
 
@@ -185,11 +188,12 @@ def main():
         sizes[".osrel"] = calculate_size(args.osrel, alignment)
         sizes[".initrd"] = calculate_size(args.initrd, alignment)
 
+        if args.ucode is not None:
+            sizes[".ucode"] = calculate_size(args.ucode, alignment)
         if args.splash is not None:
             sizes[".splash"] = calculate_size(args.splash, alignment)
         if args.cmdline != "":
             sizes[".cmdline"] = calculate_size(Path(cmdline.name), alignment)
-
         sizes[".linux"] = calculate_size(args.linux, alignment)
 
         print("sizes:")
